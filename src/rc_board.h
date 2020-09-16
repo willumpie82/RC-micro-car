@@ -1,6 +1,13 @@
 #ifndef RCBOARDH
 #define RCBOARDH
 
+//#define CONFIG_HAS_TONE
+//#define CONFIG_HAS_NRF24
+#define CONFIG_HAS_SBUS
+//#define CONFIG_HAS_LIGHTS
+//#define CONFIG_HAS_SERVO
+
+
 #define PIN_ADC_VBAT    PA0
 //NRF24 pins
 #define PIN_NRF_CE      PA1
@@ -16,10 +23,10 @@
 #define PIN_MPU_SCL     PB6
 
 //MC34933 motordrive pins
-#define PIN_M2A         PA15
-#define PIN_M2B         PA12
-#define PIN_M1A         PA10
-#define PIN_M1B         PA11
+#define PIN_MOTOR_M2A   PA15
+#define PIN_MOTOR_M2B   PA12
+#define PIN_MOTOR_M1A   PA10
+#define PIN_MOTOR_M1B   PA11
 
 //CPU pins
 #define PIN_MCU_BOOT1   PB2
