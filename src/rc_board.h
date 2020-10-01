@@ -2,8 +2,8 @@
 #define RCBOARDH
 
 //#define CONFIG_HAS_TONE
-//#define CONFIG_HAS_NRF24
-#define CONFIG_HAS_SBUS
+#define CONFIG_HAS_NRF24
+//#define CONFIG_HAS_SBUS
 //#define CONFIG_HAS_LIGHTS
 //#define CONFIG_HAS_SERVO
 

@@ -12,7 +12,7 @@ bool battSense;
 void checkBattery() 
 { 
   vehicleConfig* cfg = getConfigptr();
-  ackPayload* payload = getPayloadptr();
+  RcData* data = getDataptr();
 
   if (cfg->getboardVersion() < 1.2) battSense = false;
   else battSense = true;
@@ -31,15 +31,9 @@ void checkBattery()
     lastTrigger = millis();
 
     // Read both averaged voltages
-    payload->batteryVoltage = batteryAverage();
-    payload->vcc = vccAverage();
+    data->setVoltage(batteryAverage());
+    //payload->vcc = vccAverage();
 
-    if (battSense) { // Observe battery voltage
-      if (payload->batteryVoltage <= cfg->getcutoffVoltage()) payload->batteryOk = false;
-    }
-    else { // Observe vcc voltage
-      if (payload->vcc <= cfg->getcutoffVoltage()) payload->batteryOk = false;
-    }
   }
 }
 

@@ -1,7 +1,7 @@
 #ifndef MOTORSH
 #define MOTORSH
 
-#include "../lib/MC34933/MC34933.h"  // https://github.com/willumpie82/MC34933
+#include "MC34933.h" 
 
 typedef enum motor_e
 {
@@ -9,6 +9,9 @@ typedef enum motor_e
     MOTOR2
 }motor_t;
 
+// motor wrapper functions
+void motordrive(motor_t motor, int controlValue, int minPWM, int maxPWM, int rampTime, bool neutralBrake);
+bool motorBrakeActive(motor_t motor);
 
 // Motors
 bool getIsDriving();
@@ -20,6 +23,8 @@ void driveMotorsForklift();
 void driveMotorsSteering();
 void drive();
 
-MC34933* getMotorptr(motor_t motor);
+
+
+//MC34933* getMotorptr(motor_t motor);
 
 #endif //MOTORSH

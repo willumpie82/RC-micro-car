@@ -2,7 +2,7 @@
 #include "MPU6050.h"
 #include <Wire.h>
 #include "vehicleConfig.h"
-//#include "radio.h"
+#include "balancing.h"
 
 
 
@@ -64,7 +64,7 @@ void writeDebug() {
     Serial.print("   R: ");
     Serial.print(angle_roll);    //Print roll
     Serial.print("   Motor: ");
-    Serial.println(angleOutput);    //Print Motor output
+    Serial.println(getAngleOut());    //Print Motor output
   }
 #endif
 }

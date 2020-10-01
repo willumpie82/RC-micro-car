@@ -6,5 +6,7 @@ void driveMotorsBalancing( void );
 void setupPid( void );
 void mrsc();
 
+double getAngleOut( void );
+
 
 #endif //BALANCINGH

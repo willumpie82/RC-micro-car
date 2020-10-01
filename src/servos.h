@@ -1,6 +1,7 @@
 #ifndef SERVOSH
 #define SERVOSH
 
-void writeServos();
+void writeServos( void );
+void setupServos( void );
 
 #endif //SERVOSH

@@ -2,6 +2,7 @@
 #ifndef vehicleConfig_h
 #define vehicleConfig_h
 
+
 typedef enum vehicleconfig_e
 {
   STANDARDCAR,
@@ -175,9 +176,12 @@ public:
   bool getengineSound(){ return m_engineSound;}
   bool gettoneOut(){ return m_toneOut;}
 
+  bool usesMPU( void ){return (getvehicleType() == balancingthing || getvehicleType() == carwithMRSC); }
+
 }; //class vehicleConfig
 
 vehicleConfig* getConfigptr( void );
+void setupConfig(vehicleconfig_t type);
 
 
 #endif

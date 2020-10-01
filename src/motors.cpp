@@ -8,8 +8,8 @@
 #include "balancing.h"
 
 
-#include "../lib/MC34933/MC34933.h"  // https://github.com/willumpie82/MC34933
-#include <../lib/PWMFrequency/PWMFrequency.h> // https://github.com/TheDIYGuy999/PWMFrequency
+#include "MC34933.h"
+#include "PWMFrequency.h"
 
 bool isDriving; // is the vehicle driving?
 // Motor objects
@@ -66,8 +66,8 @@ void setupMotors()
 
   // SYNTAX: IN1, IN2, PWM, min. input value, max. input value, neutral position width
   // invert rotation direction true or false
-  Motor1.begin(motor1_in1, motor1_in2, 0, 100, 4, false); // Drive motor
-  Motor2.begin(motor2_in1, motor2_in2, 0, 100, 4, false); // Steering motor (Drive in "HP" version)
+  Motor2.begin(motor1_in1, motor1_in2, 0, 100, 4, false); // Drive motor
+  Motor1.begin(motor2_in1, motor2_in2, 0, 100, 4, false); // Steering motor (Drive in "HP" version)
 
   // Motor PWM frequency prescalers (Requires the PWMFrequency.h library)
   // Differential steering vehicles: locked to 984Hz, to make sure, that both motors use 984Hz.
@@ -84,15 +84,25 @@ void setupMotors()
 
 MC34933* getMotorptr(motor_t motor)
 {
-  if(motor==1)
+  switch(motor)
   {
-    return &Motor1;
+    case MOTOR1:
+    {
+      return &Motor1;
+    }
+    break;
+
+    case MOTOR2:
+    {
+      return &Motor2;
+    }
+    break;
+    
+    default:
+    {
+      return NULL;
+    }
   }
-  else
-  {
-    return &Motor2;
-  }
-  
 }
 
 //
@@ -100,6 +110,16 @@ MC34933* getMotorptr(motor_t motor)
 // DRIVE MOTORS CAR (for cars, one motor for driving, one for steering)
 // =======================================================================================================
 //
+
+void motordrive(motor_t motor, int controlValue, int minPWM, int maxPWM, int rampTime, bool neutralBrake)
+{
+   getMotorptr(motor)->drive( controlValue,  minPWM,  maxPWM,  rampTime,  neutralBrake);
+}
+
+bool motorBrakeActive(motor_t motor)
+{
+  return getMotorptr(motor)->brakeActive();
+}
 
 void drive()
 {
@@ -110,7 +130,6 @@ void drive()
     case car:
     {
       driveMotorsCar();
-
     }
     break;
 
@@ -149,7 +168,7 @@ void driveMotorsCar() {
 
   vehicleConfig* cfg = getConfigptr();
   RcData* data = getDataptr();
-  ackPayload* payload = getPayloadptr();
+  //ackPayload* payload = getPayloadptr();
 
   int maxPWM;
   byte maxAcceleration;
@@ -161,7 +180,7 @@ void driveMotorsCar() {
     maxPWM = cfg->getmaxPWMfull(); // Full
   }
 
-  if (!payload->batteryOk && cfg->getliPo()) data->axis3 = 50; // Stop the vehicle, if the battery is empty!
+  if (!data->batteryOk && cfg->getliPo()) data->axis3 = 50; // Stop the vehicle, if the battery is empty!
 
   // Acceleration & deceleration limitation (ms per 1 step input signal change)
   if (data->mode2) {
@@ -178,7 +197,7 @@ void driveMotorsCar() {
     if (Motor1.drive(data->axis3, cfg->getminPWM(), maxPWM, maxAcceleration, true) ) { // The drive motor (function returns true, if not in neutral)
       UpdatemillisLightOff(); // Reset the headlight delay timer, if the vehicle is driving!
     }
-    if (cfg->getvehicleType() != 5) { // If not car with MSRC stabilty control
+    if (cfg->getvehicleType() != carwithMRSC) { // If not car with MSRC stabilty control
       Motor2.drive(data->axis1, 0, cfg->getsteeringTorque(), 0, false); // The steering motor (if the original steering motor is reused instead of a servo)
     }
   }
@@ -199,7 +218,7 @@ void driveMotorsForklift() {
 
   vehicleConfig* cfg = getConfigptr();
   RcData* data = getDataptr();
-  ackPayload* payload = getPayloadptr();
+  //ackPayload* payload = getPayloadptr();
 
   int maxPWM;
   byte maxAcceleration;
@@ -211,7 +230,7 @@ void driveMotorsForklift() {
     maxPWM = cfg->getmaxPWMfull(); // Full
   }
 
-  if (!payload->batteryOk && cfg->getliPo()) data->axis3 = 50; // Stop the vehicle, if the battery is empty!
+  if (!data->batteryOk && cfg->getliPo()) data->axis3 = 50; // Stop the vehicle, if the battery is empty!
 
   // Acceleration & deceleration limitation (ms per 1 step input signal change)
   if (data->mode2) {
@@ -254,7 +273,7 @@ void driveMotorsSteering() {
 
   vehicleConfig* cfg = getConfigptr();
   RcData* data = getDataptr();
-  ackPayload* payload = getPayloadptr();
+  //ackPayload* payload = getPayloadptr();
 
   // The steering overlay
   int steeringFactorLeft=0;
@@ -312,7 +331,7 @@ void driveMotorsSteering() {
   pwm[0] = map(pwm[0], 100, -100, 100, 0); // convert -100 to 100% to 0-100 for motor control
   pwm[1] = map(pwm[1], 100, -100, 100, 0);
 
-  if (!payload->batteryOk && cfg->getliPo()) { // Both motors off, if LiPo battery is empty!
+  if (!data->batteryOk && cfg->getliPo()) { // Both motors off, if LiPo battery is empty!
     pwm[0] = 0;
     pwm[1] = 0;
   }

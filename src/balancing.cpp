@@ -4,7 +4,7 @@
 #include "vehicleConfig.h"
 #include "MPU6050.h"
 #include "radio.h"
-#include <../lib/Arduino-PID-Library/PID_v1.h> // https://github.com/br3ttb/Arduino-PID-Library/
+#include "PID_v1.h" // https://github.com/br3ttb/Arduino-PID-Library/
 #include "motors.h"
 
 int speedPot;
@@ -24,7 +24,10 @@ PID speedPid(&speedMeasured, &speedOutput, &speedTarget, 0.0, 0.0, 0.0, DIRECT);
 PID anglePid(&angleMeasured, &angleOutput, &angleTarget, 0.0, 0.0, 0.0, DIRECT); // Angle: inner, fast control loop
 
 
-
+double getAngleOut( void )
+{
+  return angleOutput;
+}
 //
 // =======================================================================================================
 // PID SETUP
@@ -69,7 +72,7 @@ void balancing() {
 
   // PID Parameters (Test)
   double speedKp = 0.9, speedKi = 0.03, speedKd = 0.0;
-  double angleKp = data->pot1 / 8.0, angleKi = 25.0, angleKd = 0.12; // /You need to connect a potentiometer to the transmitter analog input A6
+  double angleKp = data->pot / 8.0, angleKi = 25.0, angleKd = 0.12; // /You need to connect a potentiometer to the transmitter analog input A6
 
   // PID Parameters (Working)
   //double speedKp = 0.9, speedKi = 0.03, speedKd = 0.0;
@@ -109,8 +112,6 @@ void mrsc() {
 
   vehicleConfig* cfg = getConfigptr();
   RcData* data = getDataptr();
-  //MC34933* Motor1 = getMotorptr(MOTOR1);
-  MC34933* Motor2 = getMotorptr(MOTOR2);
 
   // Read sensor data
   readMpu6050Data();
@@ -123,7 +124,7 @@ void mrsc() {
   // Compute steering compensation overlay
   int turnRateSetPoint = data->axis1 - 50;  // turnRateSetPoint = steering angle (0 to 100) - 50 = -50 to 50
   int turnRateMeasured = Mpu6050_getyaw_rate() * abs(data->axis3 - 50); // degrees/s * speed
-  int steeringAngle = turnRateSetPoint + (turnRateMeasured * data->pot1 / 100);  // Compensation depending on the pot value
+  int steeringAngle = turnRateSetPoint + (turnRateMeasured * data->pot / 100);  // Compensation depending on the pot value
 
   steeringAngle = constrain (steeringAngle, -50, 50); // range = -50 to 50
 
@@ -133,7 +134,7 @@ void mrsc() {
 #endif //CONFIG_HAS_SERVO
   // Control motor 2 (steering, not on "High Power" board type)
   if (!cfg->getHP()) {
-    Motor2->drive((steeringAngle + 50), 0, cfg->getsteeringTorque(), 0, false); // The steering motor (if the original steering motor is reused instead of a servo)
+    motordrive(MOTOR2, (steeringAngle + 50), 0, cfg->getsteeringTorque(), 0, false); // The steering motor (if the original steering motor is reused instead of a servo)
   }
 
   // Control motors
@@ -146,8 +147,6 @@ void driveMotorsBalancing()
 {
   vehicleConfig* cfg = getConfigptr();
   RcData* data = getDataptr();
-  MC34933* Motor1 = getMotorptr(MOTOR1);
-  MC34933* Motor2 = getMotorptr(MOTOR2);
 
   // The steering overlay is in degrees per second, controlled by the MPU 6050 yaw rate and yoystick axis 1
   int steering = ((data->axis1 - 50) / 7) - Mpu6050_getyaw_rate(); // -50 to 50 / 8 = 7°/s - yaw_rate
@@ -163,11 +162,11 @@ void driveMotorsBalancing()
   speed = constrain(speed, 7, 93); // same range as in setupPID() + 50 offset from above!
 
   if (angleMeasured > -20.0 && angleMeasured < 20.0) { // Only drive motors, if robot stands upright
-    Motor1->drive(speed - steering, cfg->getminPWM(), cfg->getmaxPWMfull(), 0, false); // left caterpillar, 0ms ramp! 50 = neutral!
-    Motor2->drive(speed + steering, cfg->getminPWM(), cfg->getmaxPWMfull(), 0, false); // right caterpillar
+    motordrive(MOTOR1, speed - steering, cfg->getminPWM(), cfg->getmaxPWMfull(), 0, false); // left caterpillar, 0ms ramp! 50 = neutral!
+    motordrive(MOTOR2, speed + steering, cfg->getminPWM(), cfg->getmaxPWMfull(), 0, false); // right caterpillar
   }
   else { // keep motors off
-    Motor1->drive(50, cfg->getminPWM(), cfg->getmaxPWMfull(), 0, false); // left caterpillar, 0ms ramp!
-    Motor2->drive(50, cfg->getminPWM(), cfg->getmaxPWMfull(), 0, false); // right caterpillar
+    motordrive(MOTOR1, 50, cfg->getminPWM(), cfg->getmaxPWMfull(), 0, false); // left caterpillar, 0ms ramp!
+    motordrive(MOTOR2, 50, cfg->getminPWM(), cfg->getmaxPWMfull(), 0, false); // right caterpillar
   }
 }

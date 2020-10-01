@@ -10,26 +10,10 @@
 
 const float codeVersion = 3.4; // Software revision (see https://github.com/TheDIYGuy999/Micro_RC_Receiver/blob/master/README.md)
 
-//
-// =======================================================================================================
-// BUILD OPTIONS (comment out unneeded options)
-// =======================================================================================================
-//
-
-//#define DEBUG // if not commented out, Serial.print() is active! For debugging only!!
-
-//
-// =======================================================================================================
-// INCLUDE LIRBARIES
-// =======================================================================================================
-//
 
 // Libraries
-#include <Wire.h> // I2C library (for the MPU-6050 gyro /accelerometer)
-//#include <RF24.h> // Installed via Tools > Board > Boards Manager > Type RF24
-#include <Servo.h>
+#include <Arduino.h>
 #include "vehicleConfig.h"
-// Tabs (header files in sketch directory)
 #include "readVCC.h"
 #include "steeringCurves.h"
 #include "tone.h"
@@ -44,10 +28,8 @@ const float codeVersion = 3.4; // Software revision (see https://github.com/TheD
 #include "balancing.h"
 #include "lights.h"
 
-
-
-
-
+#define CLIENT_ADDRESS 1   
+#define SERVER_ADDRESS 2
 
 //
 // =======================================================================================================
@@ -55,22 +37,25 @@ const float codeVersion = 3.4; // Software revision (see https://github.com/TheD
 // =======================================================================================================
 //
 
+radio_c radio(CLIENT_ADDRESS,PIN_NRF_CE, PIN_NRF_CSN);
+
+
+
 void setup() 
 {
-
+  setupConfig(STANDARDCAR);
+  
   vehicleConfig* cfg = getConfigptr();
-  cfg->begin(COKECANCAR);
-
-  RcData* data = getDataptr();
 
 #ifdef DEBUG  
   Serial.begin(115200);
-  printf_begin();
-  serialCommands = false;
+   #ifdef STM32F1xx
+    USART1->BRR = 0x271;
+  #endif
+  //printf_begin();
+  cfg->serialCommands = false;
   delay(3000);
-#endif
-
-#ifndef DEBUG
+#else
   // If TXO pin or RXI pin is used for other things, disable Serial
   if (cfg->getTXO_momentary1() || cfg->getTXO_toggle1() || cfg->getheadLights()) 
   {
@@ -80,59 +65,22 @@ void setup()
     #endif
     cfg->serialCommands = false;
   }
-  else 
-  { // Otherwise use it for serial commands to the light and sound controller
-
-#ifdef CONFIG_HAS_SBUS
-    SBUS* x8r = getSBUSptr();
-    x8r->begin(); // begin the SBUS communication
-#else
-    Serial.begin(115200); // begin the standart serial communication
-#endif
-    cfg->serialCommands = true;
-  }
 #endif
 
+#ifdef CONFIG_HAS_TONE
   if(cfg->gettoneOut())
   {
     R2D2_tell();
   }
+#endif
+  //setup lights
+  setupLights();
 
-
-  // LED setup
-#ifdef CONFIG_HAS_LIGHTS
-  if (vehicleType == 4 || vehicleType == 5 ) indicators = false; // Indicators use the same pins as the MPU-6050, so they can't be used in vehicleType 4 or 5!
-
-  if (tailLights) tailLight.begin(A1); // A1 = Servo 2 Pin
-  if (headLights) headLight.begin(0); // 0 = RXI Pin
-  if (indicators) {
-    indicatorL.begin(A4); // A4 = SDA Pin
-    indicatorR.begin(A5); // A5 = SCL Pin
-  }
-  if (beacons) beaconLights.begin(A3); // A3 = Servo 4 Pin
-#endif //CONFIG_HAS_LIGHTS
-
-// Radio setup
-#ifdef CONFIG_HAS_NRF24
-  setupRadio();
-#endif //CONFIG_HAS_NRF24
+  // Radio setup
+  radio.begin();
 
   // Servo pins
-#ifdef CONFIG_HAS_SERVO
-  servo1.attach(A0);
-  if (!tailLights) servo2.attach(A1);
-  if (!engineSound && !toneOut) servo3.attach(A2);
-  if (!beacons) servo4.attach(A3);
-#endif //CONFIG_HAS_SERVO
-
-  // All axes to neutral position
-  data->axis1 = 50;
-  data->axis2 = 50;
-  data->axis3 = 50;
-  data->axis4 = 50;
-  data->pot1 = 50; // Added in v3.32
-
-  
+  setupServos();
 
   // Special functions
   if (cfg->getTXO_momentary1() || cfg->getTXO_toggle1()) pinMode(PIN_SPARE1, OUTPUT);
@@ -140,8 +88,9 @@ void setup()
   // Motor driver setup
   setupMotors();
 
-  if (cfg->getvehicleType() == balancingthing || cfg->getvehicleType() == carwithMRSC) { // Only for self balancing vehicles and cars with MRSC
-    // MPU 6050 accelerometer / gyro setup
+  if (cfg->usesMPU()) // Only for self balancing vehicles and cars with MRSC
+  { 
+    // setup MPU 6050 accelerometer / gyro setup
     setupMpu6050();
 
     // PID controller setup
@@ -157,7 +106,8 @@ void setup()
 // =======================================================================================================
 //
 
-void digitalOutputs() {
+void digitalOutputs() 
+{
 
   vehicleConfig* cfg = getConfigptr();
   RcData* data = getDataptr();
@@ -186,8 +136,6 @@ void digitalOutputs() {
 
 
 
-
-
 //
 // =======================================================================================================
 // MAIN LOOP
@@ -196,7 +144,7 @@ void digitalOutputs() {
 
 void loop() {
   // Read radio data from transmitter
-  readRadio();
+  radio.receiveData();
 
   // Write the servo positions
   writeServos();
@@ -214,12 +162,7 @@ void loop() {
   led();
 
   // Send serial commands
-#ifdef CONFIG_HAS_SBUS
-  // Serial commands are transmitted in SBUS standard
-  sendSbusCommands();
-#else
   // Normal protocol (for ESP32 engine sound controller only)
   sendSerialCommands();
-#endif
 }
 

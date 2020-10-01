@@ -3,8 +3,9 @@
 #include "radio.h"
 #include "vehicleConfig.h"
 #include "motors.h"
+#include "rc_board.h"
 
-#include <../lib/statusLED/statusLED.h> // https://github.com/TheDIYGuy999/statusLED
+#include <statusLED.h> // https://github.com/TheDIYGuy999/statusLED
 
 
 // Headlight off delay
@@ -54,6 +55,21 @@ unsigned long getMillisLightsOff( void )
   return millisLightOff;
 }
 
+void setupLights( void )
+{
+#ifdef CONFIG_HAS_LIGHTS
+  // LED setup
+  if (vehicleType == 4 || vehicleType == 5 ) indicators = false; // Indicators use the same pins as the MPU-6050, so they can't be used in vehicleType 4 or 5!
+
+  if (tailLights) tailLight.begin(A1); // A1 = Servo 2 Pin
+  if (headLights) headLight.begin(0); // 0 = RXI Pin
+  if (indicators) {
+    indicatorL.begin(A4); // A4 = SDA Pin
+    indicatorR.begin(A5); // A5 = SCL Pin
+  }
+  if (beacons) beaconLights.begin(A3); // A3 = Servo 4 Pin
+#endif //CONFIG_HAS_LIGHTS
+}
 
 //
 // =======================================================================================================
@@ -109,7 +125,7 @@ void led()
     beaconLights.off(); // Beacons off
   }
   else {
-    if (!cfg->getescBrakeLights() && ((!cfg->getHP() && getMotorptr(MOTOR1)->brakeActive()) || (cfg->getHP() && getMotorptr(MOTOR2)->brakeActive()) )) { // if braking detected from TB6612FNG motor driver
+    if (!cfg->getescBrakeLights() && ((!cfg->getHP() && motorBrakeActive(MOTOR1)) || (cfg->getHP() && motorBrakeActive(MOTOR2)) )) { // if braking detected from TB6612FNG motor driver
       tailLight.on(); // Brake light (full brightness)
     }
 

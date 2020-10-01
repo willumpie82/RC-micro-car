@@ -2,6 +2,27 @@
 	"folders": [
 		{
 			"path": "."
+		},
+		{
+			"path": "../libs/Radiohead"
+		},
+		{
+			"path": "../libs/MC34933"
+		},
+		{
+			"path": "../libs/rc-radio"
+		},
+		{
+			"path": "../RC-transmitter"
+		},
+		{
+			"path": "../libs/Arduino_PID_Library"
+		},
+		{
+			"path": "../libs/PWMFrequency"
+		},
+		{
+			"path": "../libs/Statusled"
 		}
 	],
 	"settings": {
@@ -20,7 +41,16 @@
 			"vector": "cpp",
 			"ostream": "cpp",
 			"*.tcc": "cpp",
-			"ios": "cpp"
+			"ios": "cpp",
+			"bitset": "cpp",
+			"iomanip": "cpp",
+			"istream": "cpp",
+			"limits": "cpp",
+			"ratio": "cpp",
+			"sstream": "cpp",
+			"streambuf": "cpp",
+			"functional": "cpp",
+			"memory": "cpp"
 		}
 	}
 }

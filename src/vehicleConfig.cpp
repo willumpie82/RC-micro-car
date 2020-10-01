@@ -89,14 +89,19 @@ vehicleConfig* getConfigptr( void )
   return &cfg;
 }
 
+void setupConfig(vehicleconfig_t type)
+{
+  cfg.begin(type);
+}
+
 void vehicleConfig::begin(vehicleconfig_t vehicle)
 {
   switch (vehicle)
   {
     case COKECANCAR:
     {
-      setBasicParams(true,3.6,1.3,false,6,carwithMRSC,false,false);
-      setIndicators(false,false,true,false,false);
+      setBasicParams(false,3.6,1.3,false,6,carwithMRSC,false,false);
+      setIndicators(false,false,false,false,false);
       setServoLimits(45,135,45,135,45,135,75,105,45,135);
       setMotorConfig(255,170,0,3,12,0,160,1);
     } 

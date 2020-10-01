@@ -11,4 +11,6 @@ bool getLeft( void );
 bool getRight( void );
 bool getHazard( void );
 
+void setupLights( void );
+
 #endif //LIGHTSH

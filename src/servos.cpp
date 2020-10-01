@@ -7,6 +7,16 @@
 // =======================================================================================================
 //
 
+void setupServos( void )
+{
+#ifdef CONFIG_HAS_SERVO
+  servo1.attach(A0);
+  if (!tailLights) servo2.attach(A1);
+  if (!engineSound && !toneOut) servo3.attach(A2);
+  if (!beacons) servo4.attach(A3);
+#endif //CONFIG_HAS_SERVO
+}
+
 void writeServos() 
 {
 #ifdef CONFIG_HAS_SERVO
